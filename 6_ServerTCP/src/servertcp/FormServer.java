@@ -18,23 +18,44 @@ import java.util.logging.Logger;
  *
  * @author bodyflicker
  */
-public class FormServer extends javax.swing.JFrame {
+public class FormServer extends javax.swing.JFrame implements Runnable{
     
     String chatClient, chatServer="";
     Socket incoming;
-    ServerSocket socket = new ServerSocket(6000);
+    ServerSocket socket;
+    Thread thread;
 
     /**
      * Creates new form FormServer
      * @throws java.io.IOException
      */
-    public FormServer() throws IOException{
+    public FormServer(){
         initComponents();
-        getChat();
+        try {
+            socket = new ServerSocket(6000);
+            incoming = socket.accept();
+            if (thread == null) {
+            thread = new Thread(this, "Simple Chat");
+            thread.start();
+            }
+        } catch (Exception ex) {
+            System.out.println(ex);
+        }
+    }
+    
+    @Override
+    public void run() {
+        try {
+            while(true) {
+                getChat();
+            }
+        } catch (IOException ex) {
+            Logger.getLogger(FormServer.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     
     public void getChat() throws IOException {
-        incoming = socket.accept();
+        
         BufferedReader chatFromClient = new BufferedReader (new InputStreamReader(incoming.getInputStream()));
         chatClient = chatFromClient.readLine();
         jTextAreaHistory.append("Client: " + chatClient + "\n");
@@ -117,7 +138,6 @@ public class FormServer extends javax.swing.JFrame {
         try {
             DataOutputStream chatToClient = new DataOutputStream(incoming.getOutputStream());
             chatToClient.writeBytes(chatServer+"\n");
-            getChat();
         } catch (IOException ex) {
             Logger.getLogger(FormServer.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -153,11 +173,7 @@ public class FormServer extends javax.swing.JFrame {
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                try {
-                    new FormServer().setVisible(true);
-                } catch (IOException ex) {
-                    Logger.getLogger(FormServer.class.getName()).log(Level.SEVERE, null, ex);
-                }
+                new FormServer().setVisible(true);
             }
         });
     }

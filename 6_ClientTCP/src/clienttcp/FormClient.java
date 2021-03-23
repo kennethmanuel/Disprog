@@ -17,13 +17,25 @@ import java.util.logging.Logger;
  *
  * @author bodyflicker
  */
-public class FormClient extends javax.swing.JFrame {
+public class FormClient extends javax.swing.JFrame implements Runnable {
+
+    Socket clientSocket;
+    Thread thread;
 
     /**
      * Creates new form FormClient
      */
     public FormClient() {
-        initComponents();
+        try {
+            initComponents();
+            clientSocket = new Socket("localhost", 6000);
+            if (thread == null) {
+                thread = new Thread(this, "client");
+                thread.start();
+            }
+        } catch (IOException ex) {
+            Logger.getLogger(FormClient.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     /**
@@ -97,21 +109,34 @@ public class FormClient extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    @Override
+    public void run() {
+        getChat();
+    }
+
+    public void getChat() {
+        try {
+            String chatServer;
+            BufferedReader chatFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            chatServer = chatFromServer.readLine();
+            jTextAreaHistory.append("Server: " + chatServer + "\n");
+        } catch (IOException ex) {
+            Logger.getLogger(FormClient.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
     private void jButtonSendActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonSendActionPerformed
         // TODO add your handling code here:
         try {
             String chatClient, chatServer;
-            
             chatClient = jTextFieldMessage.getText();
             jTextAreaHistory.append("Client: " + chatClient + "\n");
-            
-            Socket clientSocket = new Socket("localhost", 6000);
+
             DataOutputStream sendToServer = new DataOutputStream(clientSocket.getOutputStream());
-            sendToServer.writeBytes(chatClient+"\n");
+            sendToServer.writeBytes(chatClient + "\n");
+
             
-            BufferedReader chatFromServer = new BufferedReader (new InputStreamReader(clientSocket.getInputStream()));
-            chatServer = chatFromServer.readLine();
-            jTextAreaHistory.append("Server: " + chatServer + "\n");
+
         } catch (IOException ex) {
             Logger.getLogger(FormClient.class.getName()).log(Level.SEVERE, null, ex);
         }
